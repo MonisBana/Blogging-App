@@ -2,14 +2,20 @@ package com.mab.bloggingapp;
 
         import android.content.Intent;
         import android.content.SharedPreferences;
+        import android.preference.PreferenceManager;
         import android.support.annotation.NonNull;
         import android.support.v7.app.AppCompatActivity;
         import android.os.Bundle;
+        import android.text.Editable;
         import android.util.Log;
         import android.view.View;
         import android.widget.CheckBox;
+        import android.widget.EditText;
         import android.widget.Toast;
 
+        import com.firebase.client.AuthData;
+        import com.firebase.client.Firebase;
+        import com.firebase.client.FirebaseError;
         import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
         import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
         import com.google.android.gms.auth.api.signin.GoogleSignInResult;
@@ -24,6 +30,7 @@ package com.mab.bloggingapp;
         import com.google.android.gms.auth.api.Auth;
         import com.google.firebase.auth.FirebaseUser;
         import com.google.firebase.auth.GoogleAuthProvider;
+        import com.google.firebase.database.ChildEventListener;
         import com.google.firebase.database.DataSnapshot;
         import com.google.firebase.database.DatabaseError;
         import com.google.firebase.database.DatabaseReference;
@@ -41,9 +48,11 @@ public class GSignin extends AppCompatActivity{
     public static final String TAG = "Main Activity";
     private String personEmail;
     DatabaseReference mDatabaseReference;
-    private String UserKey;
     private CheckBox mCheckBox;
     private int checkboxState;
+    EditText mNameField;
+    private String nameFieldValue;
+    private Boolean NameFlag;
 
     @Override
     protected void onStart() {
@@ -57,6 +66,9 @@ public class GSignin extends AppCompatActivity{
         setContentView(R.layout.activity_signin);
         mGoogleBtn = (SignInButton) findViewById(R.id.sign_in_button);
         mCheckBox= (CheckBox) findViewById(R.id.checkBox);
+        mNameField = (EditText) findViewById(R.id.NameField);
+        nameFieldValue =  PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(
+                "name","abc").toString().trim();
         mDatabaseReference = FirebaseDatabase.getInstance().getReference().child("Users");
         mAuth = FirebaseAuth.getInstance();
         mAuthListener = new FirebaseAuth.AuthStateListener() {
@@ -70,6 +82,12 @@ public class GSignin extends AppCompatActivity{
                 }
             }
         };
+        NameFlag = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getBoolean(
+                "nameFlag",false);
+        if(NameFlag == true ){
+            mNameField.setText(nameFieldValue);
+            mNameField.setEnabled(false);
+        }
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
@@ -87,6 +105,10 @@ public class GSignin extends AppCompatActivity{
         mGoogleBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putString(
+                        "name", String.valueOf(mNameField.getText())).apply();
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putBoolean(
+                        "nameFlag",true).apply();
                 signIn();
             }
         });
@@ -111,32 +133,40 @@ public class GSignin extends AppCompatActivity{
                 GoogleSignInAccount acct = result.getSignInAccount();
                 personEmail = acct.getEmail();
                 Log.d("Mab:",personEmail);
+
                 if(mCheckBox.isChecked()){
                     checkboxState=1;
-                    SharedPreferences sp = getSharedPreferences("your_prefs",MainActivity.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sp.edit();
-                    editor.putInt("sPriority",checkboxState);
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putInt(
+                            "sPriority", checkboxState).apply();
                 }
                 else{
                     checkboxState=0;
-                }
-                //HashMap<String,String> dataMap = new HashMap<String, String>();
-               // dataMap.put("Email",personEmail);
-              // mDatabaseReference.push().setValue(dataMap);
-
-                mDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+                    PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).edit().putInt(
+                            "sPriority", checkboxState).apply();
+                }mDatabaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(DataSnapshot dataSnapshot) {
-                        UserKey = dataSnapshot.getKey();
+                        String key = dataSnapshot.toString();
+                        Log.d("Keyed",key);
+                        if(dataSnapshot.child("Email").getValue() != personEmail) {
+                            HashMap<String, String> dataMap = new HashMap<String, String>();
+                            dataMap.put("Email", personEmail);
+                            dataMap.put("Name", String.valueOf(mNameField.getText()));
+                            dataMap.put("Priority", String.valueOf(checkboxState));
+                            //mDatabaseReference.push().setValue(dataMap);
+                        }
                     }
 
                     @Override
                     public void onCancelled(DatabaseError databaseError) {
 
                     }
-                });
+                }); {
+
+                }
                 firebaseAuthWithGoogle(account);
             } else {
+                Log.d("FAil", String.valueOf(checkboxState));
                 // Google Sign In failed, update UI appropriately
                 // ...
             }

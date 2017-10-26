@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:orientation="vertical" android:layout_width="fill_parent"
+              android:layout_height="fill_parent"
+    android:background="#ffffff">
+
+    <ImageView android:id="@+id/splashscreen" android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:src="@mipmap/ic_launcher"
+               android:layout_gravity="center"
+               android:layout_centerVertical="true"
+               android:layout_centerHorizontal="true"/>
+
+    <TextView
+        android:id="@+id/textView"
+        android:layout_width="280dp"
+        android:layout_height="wrap_content"
+        android:text="Blogging App"
+        android:textAlignment="center"
+        android:textColor="#e74b3b"
+        android:textStyle="bold"
+        android:textSize="32sp"
+        android:layout_marginTop="27dp"
+        android:layout_below="@+id/splashscreen"
+        android:layout_centerHorizontal="true"/>
+
+</RelativeLayout>

@@ -4,23 +4,34 @@ import android.app.ProgressDialog;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.storage.StorageManager;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.Manifest;
+import android.widget.TextView;
+import android.widget.Toast;
 
+import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
+
+import org.w3c.dom.Comment;
 
 public class PostActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_READ_STORAGE =100 ;
@@ -32,7 +43,11 @@ public class PostActivity extends AppCompatActivity {
     private ProgressDialog mProgressDialog;
     private StorageReference mStorageReference;
     private DatabaseReference mDatabaseReference;
+    private DatabaseReference mDatabaseComment;
     public static final int GALLERY_REQUEST = 1;
+    private String Name;
+    private ListView mListView;
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -66,6 +81,8 @@ public class PostActivity extends AppCompatActivity {
         mSubmitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+
+                Toast.makeText(PostActivity.this,Name,Toast.LENGTH_LONG).show();
                 startPosting();
             }
         });
@@ -76,6 +93,8 @@ public class PostActivity extends AppCompatActivity {
     private void startPosting() {
         mProgressDialog.setMessage("Posting to Blog..");
         mProgressDialog.show();
+        final String mName = PreferenceManager.getDefaultSharedPreferences(getApplicationContext()).getString(
+                "name","abc").toString().trim();
         final String title_val = mTitleField.getText().toString().trim();
         final String desc_val = mDescField.getText().toString().trim();
         if(!TextUtils.isEmpty(title_val)&& !TextUtils.isEmpty(desc_val)&&mImageUri!=null){
@@ -86,6 +105,7 @@ public class PostActivity extends AppCompatActivity {
                     @SuppressWarnings("VisibleForTests")
                     Uri downloadUrl = taskSnapshot.getDownloadUrl();
                     DatabaseReference newPost = mDatabaseReference.push();
+                    newPost.child("Name").setValue(mName);
                     newPost.child("title").setValue(title_val);
                     newPost.child("desc").setValue(desc_val);
                     newPost.child("image").setValue(downloadUrl.toString());
